@@ -69,7 +69,7 @@ object Adb {
     fun status(): Map<String, Any?> = mapOf(
         "connected" to connected, "route" to route, "state" to state, "error" to lastError,
         "tls_paired" to paired, "tls_port" to tlsPort, "ever_allowed" to everAllowed,
-        "can_self_enable" to canWriteSecure(), "overlay" to Settings.canDrawOverlays(ctx),
+        "can_self_enable" to canWriteSecure(), "overlay" to ctx.canDrawOverApps(),
         "sdk" to Build.VERSION.SDK_INT, "probe" to lastProbe,
     )
 
@@ -268,7 +268,7 @@ object Adb {
         } catch (e: Exception) { Log.w(TAG, "self enable", e); false }
     }
 
-    private fun canWriteSecure() = ctx.checkSelfPermission("android.permission.WRITE_SECURE_SETTINGS") == PackageManager.PERMISSION_GRANTED
+    private fun canWriteSecure() = ctx.hasPermission("android.permission.WRITE_SECURE_SETTINGS")
 
     private fun discover(type: String, ms: Long): Int? {
         val found = AtomicInteger(-1)

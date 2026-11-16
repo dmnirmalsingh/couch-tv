@@ -47,7 +47,7 @@ object FireHome {
     /** Usage access, the no-ADB way to see Amazon's home come forward. */
     val usageAllowed: Boolean
         get() = runCatching {
-            App.instance.getSystemService(AppOpsManager::class.java)
+            App.instance.sysService<AppOpsManager>(android.content.Context.APP_OPS_SERVICE)
                 .checkOpNoThrow(AppOpsManager.OPSTR_GET_USAGE_STATS, Process.myUid(), App.instance.packageName) == AppOpsManager.MODE_ALLOWED
         }.getOrDefault(false)
 
@@ -172,7 +172,7 @@ object FireHome {
      */
     private fun selfEnableWatch() {
         val c = App.instance
-        if (c.checkSelfPermission("android.permission.WRITE_SECURE_SETTINGS") != android.content.pm.PackageManager.PERMISSION_GRANTED) return
+        if (!c.hasPermission("android.permission.WRITE_SECURE_SETTINGS")) return
         runCatching {
             val cr = c.contentResolver
             val me = "${c.packageName}/${WatchService::class.java.name}"
@@ -203,8 +203,8 @@ object FireHome {
     /** App-usage events, polled while the screen is on. No ADB involved. */
     private fun watchUsage() {
         Log.i(TAG, "watching for Amazon's home (usage events)")
-        val usm = App.instance.getSystemService(UsageStatsManager::class.java)
-        val power = App.instance.getSystemService(PowerManager::class.java)
+        val usm = App.instance.sysService<UsageStatsManager>(android.content.Context.USAGE_STATS_SERVICE)
+        val power = App.instance.sysService<PowerManager>(android.content.Context.POWER_SERVICE)
         var since = System.currentTimeMillis()
         while (wanted && usageAllowed && !WatchService.connected) {
             Thread.sleep(if (power.isInteractive) 500 else 3_000)
@@ -285,7 +285,7 @@ object FireHome {
         val sdk = android.os.Build.VERSION.SDK_INT
         if (sdk >= 30 || (sdk < 29 && !isFireTv)) { App.openHome(); return }
         val task = runCatching {
-            App.instance.getSystemService(android.app.ActivityManager::class.java).appTasks.firstOrNull {
+            App.instance.sysService<android.app.ActivityManager>(android.content.Context.ACTIVITY_SERVICE).appTasks.firstOrNull {
                 it.taskInfo.topActivity?.className == HomeActivity::class.java.name
             }
         }.getOrNull()

@@ -48,7 +48,7 @@ object WatchNext {
     private val PERMISSION = if (Build.VERSION.SDK_INT >= 29) "android.permission.READ_TV_LISTINGS"
         else "com.android.providers.tv.permission.READ_EPG_DATA"
 
-    fun granted(): Boolean = Store.context().checkSelfPermission(PERMISSION) == PackageManager.PERMISSION_GRANTED
+    fun granted(): Boolean = Store.context().hasPermission(PERMISSION)
 
     /** Lists the rows as cards only where Keep watching has no other way to fill: the permission is
      *  there and the app's own ADB has never connected. A TV whose ADB works keeps Keep watching

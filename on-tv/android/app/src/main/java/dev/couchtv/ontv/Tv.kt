@@ -25,8 +25,8 @@ class ApiError(val status: Int, message: String) : Exception(message)
 object Tv {
     private lateinit var ctx: Context
     private val main = Handler(Looper.getMainLooper())
-    private val audio by lazy { ctx.getSystemService(AudioManager::class.java) }
-    private val power by lazy { ctx.getSystemService(PowerManager::class.java) }
+    private val audio by lazy { ctx.sysService<AudioManager>(Context.AUDIO_SERVICE) }
+    private val power by lazy { ctx.sysService<PowerManager>(Context.POWER_SERVICE) }
 
     fun init(c: Context) { ctx = c.applicationContext }
 
@@ -135,7 +135,7 @@ object Tv {
         main.post { try { ctx.startActivity(i) } catch (e: Exception) { err = e }; latch.countDown() }
         latch.await(3, java.util.concurrent.TimeUnit.SECONDS)
         err?.let { throw ApiError(502, "the TV would not open it: ${it.message}") }
-        if (!Settings.canDrawOverlays(ctx) && !App.inForeground) {
+        if (!ctx.canDrawOverApps() && !App.inForeground) {
             // Android may drop activity starts from a background app. Not an error we can see.
             App.note = "Opened with a plain intent while in the background; if nothing appeared, connect ADB once in setup."
         }

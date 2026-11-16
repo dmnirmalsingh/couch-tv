@@ -99,7 +99,9 @@ class App : Application() {
 
         /** The address on the network Android is actually using (Wi-Fi or Ethernet). */
         private fun activeAddress(): String? = runCatching {
-            val cm = instance.getSystemService(android.net.ConnectivityManager::class.java)
+            // activeNetwork needs Android 6; on Fire OS 5 the network interface scan above answers instead.
+            if (Build.VERSION.SDK_INT < 23) return@runCatching null
+            val cm = instance.sysService<android.net.ConnectivityManager>(Context.CONNECTIVITY_SERVICE)
             cm.getLinkProperties(cm.activeNetwork)?.linkAddresses?.map { it.address }
                 ?.firstOrNull { it is java.net.Inet4Address && !it.isLoopbackAddress }?.hostAddress
         }.getOrNull()
@@ -123,7 +125,7 @@ class BridgeService : Service() {
 
     override fun onCreate() {
         super.onCreate()
-        val nm = getSystemService(NotificationManager::class.java)
+        val nm = sysService<NotificationManager>(Context.NOTIFICATION_SERVICE)
         // Notification channels start at Android 8; Android 7 (Fire OS 6) builds the notification without one
         val b = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             nm.createNotificationChannel(NotificationChannel("bridge", "Couch TV remote", NotificationManager.IMPORTANCE_LOW))
@@ -140,7 +142,7 @@ class BridgeService : Service() {
         } else {
             startForeground(1, n)
         }
-        val wm = applicationContext.getSystemService(WifiManager::class.java)
+        val wm = applicationContext.sysService<WifiManager>(Context.WIFI_SERVICE)
         wifiLock = runCatching { wm.createWifiLock(WifiManager.WIFI_MODE_FULL_HIGH_PERF, "couchtv").apply { acquire() } }.getOrNull()
         multicast = runCatching { wm.createMulticastLock("couchtv-mdns").apply { setReferenceCounted(false); acquire() } }.getOrNull()
         startServer()
